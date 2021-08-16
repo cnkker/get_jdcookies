@@ -13,7 +13,12 @@ requests.packages.urllib3.disable_warnings()
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
 
-jd_ua = 'jdapp;android;10.0.5;11;0393465333165363-5333430323261366;network/wifi;model/M2102K1C;osVer/30;appBuild/88681;partner/lc001;eufv/1;jdSupportDarkMode/0;Mozilla/5.0 (Linux; Android 11; M2102K1C Build/RKQ1.201112.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/77.0.3865.120 MQQBrowser/6.2 TBS/045534 Mobile Safari/537.36'
+jd_ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 SP-engine/2.14.0 main%2F1.0 baiduboxapp/11.18.0.16 (Baidu; P2 13.3.1) NABar/0.0'
+js_url= 'https://plogin.m.jd.com/cgi-bin/mm/new_login_entrance?lang=chs&appid=300&returnurl=https://wq.jd.com/passport/LoginRedirect?state={0}&returnurl=https://home.m.jd.com/myJd/newhome.action?sceneval=2&ufc=&/myJd/home.action&source=wq_passport'
+referer_url='https://plogin.m.jd.com/login/login?appid=300&returnurl=https://wq.jd.com/passport/LoginRedirect?state={0}&returnurl=https://home.m.jd.com/myJd/newhome.action?sceneval=2&ufc=&/myJd/home.action&source=wq_passport'
+returnurl_url='https://wqlogin2.jd.com/passport/LoginRedirect?state={0}&returnurl=//home.m.jd.com/myJd/newhome.action?sceneval=2&ufc=&/myJd/home.action'
+token_url='https://plogin.m.jd.com/cgi-bin/m/tmauthreflogurl?s_token={0}&v={1}&remember=true'
+qrcode_url='https://plogin.m.jd.com/cgi-bin/m/tmauth?appid=300&client_type=m&token={0}'
 
 def GetCookiesExit1():
   print("程序5秒后自动退出")
@@ -38,10 +43,10 @@ def token_get():
     t = round(time.time())
     headers = {
         'User-Agent': jd_ua,
-        'referer': 'https://plogin.m.jd.com/cgi-bin/mm/new_login_entrance?lang=chs&appid=300&returnurl=https://wq.jd.com/passport/LoginRedirect?state={0}&returnurl=https://home.m.jd.com/myJd/newhome.action?sceneval=2&ufc=&/myJd/home.action&source=wq_passport'.format(t)
+        'referer': referer_url.format(t)
     }
     t = round(time.time())
-    url = 'https://plogin.m.jd.com/cgi-bin/mm/new_login_entrance?lang=chs&appid=300&returnurl=https://wq.jd.com/passport/LoginRedirect?state={0}&returnurl=https://home.m.jd.com/myJd/newhome.action?sceneval=2&ufc=&/myJd/home.action&source=wq_passport'.format(t)
+    url = js_url.format(t)
     res = s.get(url=url, headers=headers, verify=False)
     res_json = json.loads(res.text)
     s_token = res_json['s_token']
@@ -52,15 +57,18 @@ def token_get():
 def token_post(s_token):
     t = round(time.time() * 1000)
     headers = {
+        'Connection': 'Keep-Alive',
         'User-Agent': jd_ua,
-        'referer': 'https://plogin.m.jd.com/login/login?appid=300&returnurl=https://wqlogin2.jd.com/passport/LoginRedirect?state={0}&returnurl=//home.m.jd.com/myJd/newhome.action?sceneval=2&ufc=&/myJd/home.action&source=wq_passport'.format(t),
+        'referer': referer_url.format(t),
         'Content-Type': 'application/x-www-form-urlencoded; Charset=UTF-8'
     }
-    url = 'https://plogin.m.jd.com/cgi-bin/m/tmauthreflogurl?s_token={0}&v={1}&remember=true'.format(s_token, t)
+    url = token_url.format(s_token, t)
+
     data = {
         'lang': 'chs',
         'appid': 300,
-        'returnurl': 'https://wqlogin2.jd.com/passport/LoginRedirect?state={0}returnurl=//home.m.jd.com/myJd/newhome.action?sceneval=2&ufc=&/myJd/home.action&source=wq_passport'.format(t)
+        'returnurl': returnurl_url.format(t),
+        'source': 'wq_passport'
         }
     res = s.post(url=url, headers=headers, data=data, verify=False)
     # print(res.text)
@@ -70,7 +78,7 @@ def token_post(s_token):
     c = s.cookies.get_dict()
     okl_token = c['okl_token']
     # print("okl_token:", okl_token)
-    qrurl = 'https://plogin.m.jd.com/cgi-bin/m/tmauth?client_type=m&appid=300&token={0}'.format(token)
+    qrurl = qrcode_url.format(token)
     qrcodeb = qrcode.make(qrurl)
     qrcodeb.save("JDMobQRcode.png")
     logger.info("二维码图片 JDMobQRcode.png 已生成到该目录下,请后台运行程序,电脑打开图片后用京东APP扫码登录")
